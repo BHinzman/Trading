@@ -1,0 +1,94 @@
+{ Combined Long Entry (LE) Strategy with MACD, RSI, Bollinger Bands, and Single Moving Average Cross }
+
+inputs:  
+    { MACD Inputs }
+    FastLengthMACD( 12 ),
+    SlowLengthMACD( 26 ),
+    MACDLength( 9 ),
+    { RSI Inputs }
+    RSILength( 14 ),
+    OverSold( 30 ),
+    { Bollinger Band Inputs }
+    BBLength( 20 ),
+    NumDevsDn( 2 ),
+    { Single Moving Average Inputs }
+    Price( Close ),
+    Length( 5 ),
+    ConfirmBars( 4 ), { New Input for SMA }
+    { User-defined Input for Trade Execution Window and Minimum Indicators }
+    BarsAfterSignal( 5 ),
+    MinIndicatorsForBuy( 3 ); { 1, 2, or 3, adjusted for SMA, not counting SMA itself }
+
+variables:
+    { MACD Variables }
+    MyMACD( 0 ), 
+    MACDAvg( 0 ), 
+    MACDDiff( 0 ),
+    { RSI Variable }
+    RSIValue( 0 ),
+    { Bollinger Band Variable }
+    LowerBand( 0 ),
+    { Single Moving Average Variables }
+    SMAValue( 0 ), { Used for checking if price is above SMA }
+    Counter( 0 ), { Updated Variable for SMA confirmation }
+    { Signal Variables }
+    BullishSignalMACD( false ),
+    BullishSignalRSI( false ),
+    BullishSignalBB( false ),
+    AboveSMA( false ), { Directly check if Price > SMAValue }
+    BarsSinceSignal( 0 ),
+    InitialSignal( false ),
+    BullishIndicatorsCount( 0 );
+
+{ Calculate MACD, RSI, and SMA Value }
+MyMACD = MACD( Close, FastLengthMACD, SlowLengthMACD );
+MACDAvg = XAverage( MyMACD, MACDLength );
+MACDDiff = MyMACD - MACDAvg;
+RSIValue = RSI( Close, RSILength );
+SMAValue = AverageFC( Price, Length );
+
+{ Calculate Bollinger Band }
+LowerBand = BollingerBand( Close, BBLength, -NumDevsDn );
+
+{ Update Above SMA Check }
+AboveSMA = Price > SMAValue;
+
+{ Update Bullish Signals excluding SMA as a prerequisite }
+BullishSignalMACD = AboveSMA and CurrentBar > 2 and MACDDiff crosses over 0;
+BullishSignalRSI = AboveSMA and CurrentBar > 1 and RSIValue crosses over OverSold;
+BullishSignalBB = AboveSMA and CurrentBar > 1 and Close crosses over LowerBand;
+
+{ Count Bullish Indicators excluding SMA }
+BullishIndicatorsCount = 0;
+if BullishSignalMACD then BullishIndicatorsCount = BullishIndicatorsCount + 1;
+if BullishSignalRSI then BullishIndicatorsCount = BullishIndicatorsCount + 1;
+if BullishSignalBB then BullishIndicatorsCount = BullishIndicatorsCount + 1;
+
+{ Adjust Initial Signal to only consider Above SMA condition }
+if AboveSMA and (BullishIndicatorsCount > 0) then
+    begin
+    if InitialSignal = false then
+        begin
+        InitialSignal = true;
+        BarsSinceSignal = 0;
+        end
+    else if BarsSinceSignal < BarsAfterSignal then
+        BarsSinceSignal = BarsSinceSignal + 1;
+    end
+else
+    begin
+    InitialSignal = false;
+    BarsSinceSignal = 0;
+    end;
+
+{ Buy Logic within Window }
+{ Ensure stock is above SMA and enough bullish indicators are present excluding SMA for buy signal }
+if InitialSignal and BarsSinceSignal <= BarsAfterSignal and BullishIndicatorsCount >= MinIndicatorsForBuy then
+    begin
+    Buy ( "Combined_LE_Window" ) next bar at market;
+    InitialSignal = false;
+    end;
+
+{ Reset Counter After Trade Execution }
+if MarketPosition = 1 then
+    BarsSinceSignal = 0;
