@@ -21,8 +21,8 @@ inputs:
 
 variables:
     { MACD Variables }
-    MyMACD( 0 ), 
-    MACDAvg( 0 ), 
+    MyMACD( 0 ),
+    MACDAvg( 0 ),
     MACDDiff( 0 ),
     { RSI Variable }
     RSIValue( 0 ),

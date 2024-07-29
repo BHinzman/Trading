@@ -1,0 +1,82 @@
+
+inputs: ATRLength(14), NearTermPeriod(5), LongTermPeriod(20);
+
+// Define variables
+variables:
+	LongProfitTarget(20),
+	LongStopLoss(20),
+	ShortProfitTarget(20),
+	ShortStopLoss(20),
+    NearHigh(0),
+    NearLow(0),
+    LongHigh(0),
+    LongLow(0),
+    BuySignal(false),
+    SellSignal(false),
+    SumATR(0),
+    EndOfDayBuffer(5),
+    LongHigh1(0), LongHigh2(0), LongHigh3(0), LongHigh4(0),
+    LongLow1(0), LongLow2(0), LongLow3(0), LongLow4(0),
+    Counter(0);
+
+if CurrentBar > 1 then begin
+    // Calculate Near-Term High and Low
+    NearHigh = High;
+    NearLow = Low;
+    for Counter = 1 to NearTermPeriod - 1 begin
+        if High[Counter] > NearHigh then NearHigh = High[Counter];
+        if Low[Counter] < NearLow then NearLow = Low[Counter];
+    end;
+
+    // Calculate Long-Term High and Low
+    LongHigh = High;
+    LongLow = Low;
+    for Counter = 1 to LongTermPeriod - 1 begin
+        if High[Counter] > LongHigh then LongHigh = High[Counter];
+        if Low[Counter] < LongLow then LongLow = Low[Counter];
+    end;
+
+    // Shift LongHighHistory and LongLowHistory values
+    LongHigh4 = LongHigh3;
+    LongHigh3 = LongHigh2;
+    LongHigh2 = LongHigh1;
+    LongHigh1 = LongHigh;
+
+    LongLow4 = LongLow3;
+    LongLow3 = LongLow2;
+    LongLow2 = LongLow1;
+    LongLow1 = LongLow;
+
+    // Check for Buy Signal
+    BuySignal = (Close[1] > Open[1] and Close > Open) and
+                (Close > Open[1]) and
+                (LongLow1 > NearLow or LongLow2 > NearLow or LongLow3 > NearLow or LongLow4 > NearLow);
+
+    // Check for Sell Signal
+    SellSignal = (Close[1] < Open[1] and Close < Open) and
+                 (Close < Open[1]) and
+                 (LongHigh1 < NearHigh or LongHigh2 < NearHigh or LongHigh3 < NearHigh or LongHigh4 < NearHigh);
+
+    // Plot signals
+    if BuySignal then Buy ("LongEntry") Next Bar at Market;
+    if SellSignal then SellShort ("ShortEntry") Next Bar at Market;
+end;
+
+
+// Set Profit Targets and Stop Losses
+If MarketPosition = 1 Then Begin
+	SetProfitTarget(LongProfitTarget);
+	SetStopLoss(LongStopLoss);
+End 
+Else If MarketPosition = -1 Then Begin 
+	SetProfitTarget(ShortProfitTarget);
+	SetStopLoss(ShortStopLoss);
+End;
+
+// Exit positions at the end of the day with buffer
+If MarketPosition = 1 and Time >= SessionEndTime(0, 1) - EndOfDayBuffer Then Begin
+	Sell ("LastMinuteCover") this bar on close;
+End;
+If MarketPosition = -1 and Time >= SessionEndTime(0, 1) - EndOfDayBuffer Then Begin
+	BuyToCover ("LastSecondCover") this bar on close;
+End;

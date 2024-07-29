@@ -1,0 +1,44 @@
+Inputs: 
+    TenkanPeriod( 9 ),
+    KijunPeriod( 26 ),
+    SenkouPeriodA( 26 ),  // Typically, this is the same as KijunPeriod
+    SenkouPeriodB( 52 ),
+    ChikouPeriod( 26 ),
+    MinIndicatorsForEntry( 3 ); // This input isn't used in the code below but could be part of a more complex entry condition
+
+Vars: 
+    TenkanSen( 0 ),
+    KijunSen( 0 ),
+    SenkouSpanA( 0 ),
+    SenkouSpanB( 0 ),
+    ChikouSpan( 0 ),
+    BullishSignal( false ),
+    BearishSignal( false );
+
+// Calculate Ichimoku Lines
+TenkanSen = (Highest(High, TenkanPeriod) + Lowest(Low, TenkanPeriod)) / 2;
+KijunSen = (Highest(High, KijunPeriod) + Lowest(Low, KijunPeriod)) / 2;
+SenkouSpanA = (TenkanSen + KijunSen) / 2;
+SenkouSpanB = (Highest(High, SenkouPeriodB) + Lowest(Low, SenkouPeriodB)) / 2;
+ChikouSpan = Close[ChikouPeriod];
+
+// Update Ichimoku Signals for Bullish Conditions
+BullishSignal = (Close > SenkouSpanA[SenkouPeriodA]) and 
+                (SenkouSpanA[SenkouPeriodA] > SenkouSpanB[SenkouPeriodA]) and 
+                (TenkanSen > KijunSen) and 
+                (Close[ChikouPeriod] > Close);
+
+// Update Ichimoku Signals for Bearish Conditions
+BearishSignal = (Close < SenkouSpanA[SenkouPeriodA]) and 
+                (SenkouSpanA[SenkouPeriodA] < SenkouSpanB[SenkouPeriodA]) and 
+                (TenkanSen < KijunSen) and 
+                (Close[ChikouPeriod] < Close);
+
+// Trade Logic
+// Enter Long Position when Bullish Conditions are met
+If BullishSignal and MarketPosition <> 1 then
+    Buy next bar at market;
+
+// Enter Short Position when Bearish Conditions are met
+If BearishSignal and MarketPosition <> -1 then
+    SellShort next bar at market;

@@ -1,0 +1,81 @@
+Inputs: 
+	LongProfitTarget(45),
+	LongStopLoss(30),
+	ShortProfitTarget(20),
+	ShortStopLoss(20),
+	UpVolAlertPct(5),
+	DnVolAlertPct(-5),
+	AfStep(0.02) [DisplayName = "AfStep", ToolTip = "Acceleration Factor Step. Enter the step amount for the parabolic acceleration factor."], 
+	AfLimit(0.2) [DisplayName = "AfLimit", ToolTip = "Acceleration Factor Limit. Enter the maximum acceleration factor for the parabolic calculation."],
+	EndOfDayBuffer(5),
+	FastLength(12),
+	SlowLength(26),
+	RSILength(14),
+	RSIOverbought(70),
+	RSIOversold(30);
+
+Variables:
+	Price(Close),
+	oPrevPosition(0),
+	VolRatio(0),
+	FastAvg(0),
+	SlowAvg(0),
+	TotalTicks(0),
+	RSIValue(0),
+	MySMA(0),
+	ReturnValue(0),
+	oParCl(0), 
+	oParOp(0), 
+	oPosition(0), 
+	oTransition(0),
+	StopPrice(0);
+
+// Calculate the PSAR
+ReturnValue = ParabolicSAR(AfStep, AfLimit, oParCl, oParOp, oPosition, oTransition);
+oPrevPosition = oPosition;
+
+// Calculate the Volume Ratio
+TotalTicks = UpTicks + DownTicks;
+If TotalTicks > 0 then
+	VolRatio = 100 * (UpTicks - DownTicks) / TotalTicks
+else
+	VolRatio = 0;
+
+// Calculate the Moving Averages
+FastAvg = Average(Close, FastLength);
+SlowAvg = Average(Close, SlowLength);
+
+// Calculate RSI
+RSIValue = RSI(Close, RSILength);
+
+// Strategy logic
+If MarketPosition = 0 Then Begin
+	// Long Entry Condition
+	If (oPosition crosses over 0) and VolRatio crosses over UpVolAlertPct and Close > Open and FastAvg > SlowAvg and RSIValue < RSIOverbought Then Begin
+		Buy ("LongEntry") Next Bar at Market;
+	End;
+End;
+If MarketPosition = 0 Then Begin
+	// Short Entry Condition
+	If (oPosition crosses under 0) and VolRatio crosses under DnVolAlertPct and Close < Open and FastAvg < SlowAvg and RSIValue > RSIOversold Then Begin
+		SellShort ("ShortEntry") Next Bar at Market;
+	End;
+End;
+
+// Set Profit Targets and Stop Losses
+If MarketPosition = 1 Then Begin
+	SetProfitTarget(LongProfitTarget);
+	SetStopLoss(LongStopLoss);
+End 
+Else If MarketPosition = -1 Then Begin 
+	SetProfitTarget(ShortProfitTarget);
+	SetStopLoss(ShortStopLoss);
+End;
+
+// Exit positions at the end of the day with buffer
+If MarketPosition = 1 and Time >= SessionEndTime(0, 1) - EndOfDayBuffer Then Begin
+	Sell ("LastMinuteCover") this bar on close;
+End;
+If MarketPosition = -1 and Time >= SessionEndTime(0, 1) - EndOfDayBuffer Then Begin
+	BuyToCover ("LastSecondCover") this bar on close;
+End;

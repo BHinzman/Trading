@@ -1,0 +1,45 @@
+Inputs: 
+	LongProfitTarget(20),
+    LongStopLoss(20),
+    ShortProfitTarget(20),
+    ShortStopLoss(20),
+    int MarketOpenTime( 930 ),
+    int NoTradeEndTime( 1000 );
+    
+Variables:
+	EndofDayBuffer(5);
+    
+// Check current time against defined trading window
+If Time > NoTradeEndTime or Time < MarketOpenTime then Begin
+
+// Strategy logic
+If MarketPosition = 0 Then Begin
+    // If there's no current position, enter based on the previous bar's movement
+    If Close > Open Then Begin
+        // Market moved up, go long
+        Buy ("LongEntry") Next Bar at Close Stop;
+    End 
+    Else Begin
+        // Market moved down, go short
+        SellShort ("ShortEntry") Next Bar at Close Stop;
+    End;
+End;
+
+// Adjust profit targets based on initial or reversed entry
+If MarketPosition = 1 Then Begin
+    // For a long position, set profit target
+    SetProfitTarget(LongProfitTarget);
+    SetStopLoss(LongStopLoss);
+End 
+Else If MarketPosition = -1 Then Begin 
+    // For a short position, set profit target
+    SetProfitTarget(ShortProfitTarget);
+    SetStopLoss(ShortStopLoss);
+End;
+
+// Adjusted code to exit at the end of the day, considering a buffer before the session end
+If MarketPosition = 1 and Time >= SessionEndTime(0, 1) - EndofDayBuffer Then Begin
+    Sell ("Last minute cover") this bar on close; // Adjusted to sell at the current bar's close
+End;
+
+End;

@@ -1,0 +1,72 @@
+Inputs: 
+	LongProfitTarget(20),
+    LongStopLoss(20),
+    ShortProfitTarget(20),
+    ShortStopLoss(20),
+	UpVolAlertPct(5),
+    DnVolAlertPct(-5),
+	AfStep( 0.02 ) [DisplayName = "AfStep", ToolTip = 
+	 "Acceleration Factor Step.  Enter the step amount for the parabolic acceleration factor."], 
+	AfLimit( 0.2 ) [DisplayName = "AfLimit", ToolTip = 
+	 "Acceleration Factor Limit.  Enter the maximum acceleration factor for the parabolic calculation."];;
+    
+Variables:
+	Price(Close),
+	oPrevPosition(0),
+	VolRatio(0),
+    FastAvg(0),
+    SlowAvg(0),
+    TotalTicks(0),
+	RSIValue( 0 ),
+	EndofDayBuffer(5),
+	MySMA(0),
+	ReturnValue( 0 ),
+	oParCl( 0 ), 
+	oParOp( 0 ), 
+	oPosition( 0 ), 
+	oTransition( 0 );
+
+
+// Calculate the PSAR
+ReturnValue = ParabolicSAR( AfStep, AfLimit, oParCl, oParOp, oPosition, oTransition );
+oPrevPosition = oPosition;
+
+
+
+//Calculate the Volume Ratio
+TotalTicks = UpTicks + DownTicks;
+If TotalTicks > 0 then
+    VolRatio = 100 * (UpTicks - DownTicks) / TotalTicks
+else
+    VolRatio = 0;
+
+// Strategy logic
+If MarketPosition = 0 Then Begin
+    // Transition from -1 to 1 for a long entry
+    If (oPosition crosses over 0) and VolRatio crosses over UpVolAlertPct and Close > Open Then Begin
+        Buy ("LongEntry") Next Bar at Close Stop;
+    End;
+End;
+If MarketPosition = 0 Then Begin
+    // Transition from 1 to -1 for a short entry
+    If (oPosition crosses under 0) and VolRatio crosses over DnVolAlertPct and Close < Open Then Begin
+        SellShort ("ShortEntry") Next Bar at Close Stop;
+    End;
+End;
+
+// Adjust profit targets based on initial or reversed entry
+If MarketPosition = 1 Then Begin
+    // For a long position, set profit target
+    SetProfitTarget(LongProfitTarget);
+    SetStopLoss(LongStopLoss);
+End 
+Else If MarketPosition = -1 Then Begin 
+    // For a short position, set profit target
+    SetProfitTarget(ShortProfitTarget);
+    SetStopLoss(ShortStopLoss);
+End;
+
+// Adjusted code to exit at the end of the day, considering a buffer before the session end
+If MarketPosition = 1 and Time >= SessionEndTime(0, 1) - EndofDayBuffer Then Begin
+    Sell ("Last minute cover") this bar on close; // Adjusted to sell at the current bar's close
+End;

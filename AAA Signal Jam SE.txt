@@ -1,0 +1,94 @@
+{ Combined Sell Entry (SE) Strategy with MACD, RSI, Bollinger Bands, and Triple Moving Average Cross }
+
+inputs:  
+    { MACD Inputs }
+    FastLength( 12 ),
+    SlowLength( 26 ),
+    MACDLength( 9 ),
+    { RSI Inputs }
+    RSILength( 14 ),
+    OverBought( 70 ),
+    { Bollinger Band Inputs }
+    BBLength( 20 ),
+    NumDevsUp( 2 ),
+    { Triple Moving Average Inputs }
+    FastMALength( 4 ),
+    MedMALength( 9 ),
+    SlowMALength( 18 ),
+    { User-defined Input for Trade Execution Window and Minimum Indicators }
+    BarsAfterSignal( 5 ),
+    MinIndicatorsForSell( 2 ); { 1, 2, 3, or 4 }
+
+variables:
+    { MACD Variables }
+    MyMACD( 0 ), 
+    MACDAvg( 0 ), 
+    MACDDiff( 0 ),
+    { RSI Variable }
+    RSIValue( 0 ),
+    { Bollinger Band Variable }
+    UpperBand( 0 ),
+    { Moving Averages }
+    FastMA( 0 ),
+    MedMA( 0 ),
+    SlowMA( 0 ),
+    { Signal Variables }
+    BearishSignalMACD( false ),
+    BearishSignalRSI( false ),
+    BearishSignalBB( false ),
+    BearishSignalTMA( false ),
+    BarsSinceSignal( 0 ),
+    InitialSignal( false ),
+    BearishIndicatorsCount( 0 );
+
+{ Calculate MACD and RSI }
+MyMACD = MACD( Close, FastLength, SlowLength );
+MACDAvg = XAverage( MyMACD, MACDLength );
+MACDDiff = MyMACD - MACDAvg;
+RSIValue = RSI( Close, RSILength );
+
+{ Calculate Bollinger Band and Moving Averages }
+UpperBand = BollingerBand( Close, BBLength, NumDevsUp );
+FastMA = AverageFC( Close, FastMALength );
+MedMA = AverageFC( Close, MedMALength );
+SlowMA = AverageFC( Close, SlowMALength );
+
+{ Update Bearish Signals }
+BearishSignalMACD = CurrentBar > 2 and MACDDiff crosses under 0;
+BearishSignalRSI = CurrentBar > 1 and RSIValue crosses under OverBought;
+BearishSignalBB = CurrentBar > 1 and Close crosses under UpperBand;
+BearishSignalTMA = FastMA < MedMA and MedMA < SlowMA and Close < FastMA;
+
+{ Check for Initial Bearish Signal and Count Bearish Indicators }
+BearishIndicatorsCount = 0;
+if BearishSignalMACD or BearishSignalRSI or BearishSignalBB or BearishSignalTMA then
+    begin
+    if InitialSignal = false then
+        begin
+        InitialSignal = true;
+        BarsSinceSignal = 0;
+        end
+    else if BarsSinceSignal < BarsAfterSignal then
+        BarsSinceSignal = BarsSinceSignal + 1;
+    end
+else
+    begin
+    InitialSignal = false;
+    BarsSinceSignal = 0;
+    end;
+
+if BearishSignalMACD then BearishIndicatorsCount = BearishIndicatorsCount + 1;
+if BearishSignalRSI then BearishIndicatorsCount = BearishIndicatorsCount + 1;
+if BearishSignalBB then BearishIndicatorsCount = BearishIndicatorsCount + 1;
+if BearishSignalTMA then BearishIndicatorsCount = BearishIndicatorsCount + 1;
+
+{ Sell/Exit Logic within Window }
+if InitialSignal and BarsSinceSignal <= BarsAfterSignal and BearishIndicatorsCount >= MinIndicatorsForSell then
+    begin
+    Sell Short ( "Combined_SE_Window" ) next bar at market;
+    InitialSignal = false;
+    end;
+
+{ Reset Counter After Trade Execution }
+if MarketPosition = -1 then
+    BarsSinceSignal = 0;

@@ -1,0 +1,56 @@
+Inputs:
+    SMALength( 30 ),
+    BarsWithinAlignment( 1 ),
+    RequiredBullishSMAs( 6 ); // For bullish scenario, adjust as needed
+
+Vars:
+    BullishSMACount(0),
+    SMAData1(0),
+    SMAData2(0),
+    SMAData3(0),
+    SMAData4(0),
+    SMAData5(0),
+    SMAData6(0),
+    SMAData7(0),
+    SMAData8(0),
+    SMAData9(0),
+    SMAData10(0),
+    SMAData11(0),
+    SMAData12(0);
+
+// Calculate the SMA for each ticker's closing price
+SMAData1 = Average(Close of Data1, SMALength);
+SMAData2 = Average(Close of Data2, SMALength);
+SMAData3 = Average(Close of Data3, SMALength);
+SMAData4 = Average(Close of Data4, SMALength);
+SMAData5 = Average(Close of Data5, SMALength);
+SMAData6 = Average(Close of Data6, SMALength);
+SMAData7 = Average(Close of Data7, SMALength);
+SMAData8 = Average(Close of Data8, SMALength);
+SMAData9 = Average(Close of Data9, SMALength);
+SMAData10 = Average(Close of Data10, SMALength);
+SMAData11 = Average(Close of Data11, SMALength);
+SMAData12 = Average(Close of Data12, SMALength);
+
+If CurrentBar > SMALength Then Begin
+    BullishSMACount = 0;
+
+    // Compare the current close for each ticker against its SMA
+    If Close of Data1 > SMAData1 then BullishSMACount = BullishSMACount + 1;
+    If Close of Data2 > SMAData2 then BullishSMACount = BullishSMACount + 1;
+    If Close of Data3 > SMAData3 then BullishSMACount = BullishSMACount + 1;
+    If Close of Data4 > SMAData4 then BullishSMACount = BullishSMACount + 1;
+    If Close of Data5 > SMAData5 then BullishSMACount = BullishSMACount + 1;
+    If Close of Data6 > SMAData6 then BullishSMACount = BullishSMACount + 1;
+    If Close of Data7 > SMAData7 then BullishSMACount = BullishSMACount + 1;
+    If Close of Data8 > SMAData8 then BullishSMACount = BullishSMACount + 1;
+    If Close of Data9 > SMAData9 then BullishSMACount = BullishSMACount + 1;
+    If Close of Data10 > SMAData10 then BullishSMACount = BullishSMACount + 1;
+    If Close of Data11 > SMAData11 then BullishSMACount = BullishSMACount + 1;
+    If Close of Data12 > SMAData12 then BullishSMACount = BullishSMACount + 1;
+
+    // Act based on the count of bullish SMAs
+    If (MarketPosition = 1) and (BullishSMACount >= RequiredBullishSMAs) Then Begin
+        SellShort ("Exit Long") next bar at market; // Buy to open if bullish criteria are met
+    End;
+End;

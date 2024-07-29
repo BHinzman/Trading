@@ -1,0 +1,92 @@
+// Signal Jam 2 Strategy: Modified for Short Entries
+[IntrabarOrderGeneration = false]
+
+Inputs:  
+    Length_ATR(5),
+    NumATRs(0.75),
+    Length_PercentR(14),
+    Trigger_PercentR_SE(38),
+    DnVolAlertPct(-5),
+    FastLength_MA(9),
+    SlowLength_MA(18),
+    BarsAfterSignal(2), // Time window for indicator alignment
+    MinIndicatorsForSell(4); // Min bearish indicators for a sell order
+
+Variables:
+    BearishSignalATR(false),
+    BearishSignalPercentR(false),
+    BearishSignalVolRatio(false),
+    BearishSignalMA(false),
+    BearishIndicatorsCount(0),
+    BarsSinceATRSignal(0),
+    BarsSincePercentRSignal(0),
+    BarsSinceVolRatioSignal(0),
+    BarsSinceMASignal(0),
+    VolRatio(0),
+    FastAvg(0),
+    SlowAvg(0),
+    TotalTicks(0),
+    PercentRValue(0);
+
+// Calculate ATR-based Sell Signal
+If Close < Close[1] - AvgTrueRange(Length_ATR) * NumATRs then Begin
+    BearishSignalATR = true;
+    BarsSinceATRSignal = 0;
+End else BarsSinceATRSignal = BarsSinceATRSignal + 1;
+
+// Calculate PercentR-based Sell Signal
+PercentRValue = PercentR(Length_PercentR);
+If PercentRValue crosses under Trigger_PercentR_SE then Begin
+    BearishSignalPercentR = true;
+    BarsSincePercentRSignal = 0;
+End else BarsSincePercentRSignal = BarsSincePercentRSignal + 1;
+
+// Calculate Volume Ratio-based Sell Signal
+TotalTicks = UpTicks + DownTicks;
+If TotalTicks > 0 then
+    VolRatio = 100 * (DownTicks - UpTicks) / TotalTicks
+else
+    VolRatio = 0;
+If VolRatio crosses under DnVolAlertPct then Begin
+    BearishSignalVolRatio = true;
+    BarsSinceVolRatioSignal = 0;
+End else BarsSinceVolRatioSignal = BarsSinceVolRatioSignal + 1;
+
+// Calculate Moving Average-based Sell Signal
+FastAvg = Average(Close, FastLength_MA);
+SlowAvg = Average(Close, SlowLength_MA);
+If FastAvg crosses under SlowAvg then Begin
+    BearishSignalMA = true;
+    BarsSinceMASignal = 0;
+End else BarsSinceMASignal = BarsSinceMASignal + 1;
+
+// Check for signal alignment within BarsAfterSignal window for Sell Signal
+If (BearishSignalATR and BarsSinceATRSignal <= BarsAfterSignal) or
+   (BearishSignalPercentR and BarsSincePercentRSignal <= BarsAfterSignal) or
+   (BearishSignalVolRatio and BarsSinceVolRatioSignal <= BarsAfterSignal) or
+   (BearishSignalMA and BarsSinceMASignal <= BarsAfterSignal) then Begin
+
+    // Count Bearish Indicators
+    BearishIndicatorsCount = Iff(BearishSignalATR and BarsSinceATRSignal <= BarsAfterSignal, 1, 0) + 
+                             Iff(BearishSignalPercentR and BarsSincePercentRSignal <= BarsAfterSignal, 1, 0) + 
+                             Iff(BearishSignalVolRatio and BarsSinceVolRatioSignal <= BarsAfterSignal, 1, 0) + 
+                             Iff(BearishSignalMA and BarsSinceMASignal <= BarsAfterSignal, 1, 0);
+
+    // Entry Logic for Shorts
+    If MarketPosition = 0 and BearishIndicatorsCount >= MinIndicatorsForSell Then
+        SellShort( "BOOP *SE*" ) next bar at market;
+End;
+
+
+// Reset Signals if conditions no longer met or after a trade
+If MarketPosition = -1 then Begin
+    BearishSignalATR = false;
+    BearishSignalPercentR = false;
+    BearishSignalVolRatio = false;
+    BearishSignalMA = false;
+    // Resetting BarsSinceXSignal to avoid immediate re-triggering
+    BarsSinceATRSignal = 0;
+    BarsSincePercentRSignal = 0;
+    BarsSinceVolRatioSignal = 0;
+    BarsSinceMASignal = 0;
+End;

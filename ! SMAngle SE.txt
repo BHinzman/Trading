@@ -1,0 +1,299 @@
+{ This strategy's playing on the bear side, looking to make a profit when things are heading south in the stock market. Here's the summary:
+
+Setup: You've got 20 datasets out of 30 potential, with a 7-period simple moving average (SMA) on each. 
+You're also setting your eyes on a specific angle for this SMA, -15 degrees, to catch when things are starting to tilt down. 
+For each trade, you're aiming to bag $80 with a stop loss at $40 to limit the bleeding if things go sideways.
+
+Calculating SMA: For each stock, calculate its 7-period SMA. This is your baseline to figure out if things are on the up or down.
+
+Angle of Attack: Next up, you're calculating the angle of the SMA's slope. 
+You're using a bit of trigonometry here (arctangent function) to get the angle in degrees. 
+If this angle is less than or equal to -15 degrees, it signals that the stock is on a bearish trajectory.
+
+Counting the Bears: If a stock's closing price is below its SMA and the SMA's angle is bearish enough (<= -15 degrees), it gets a point. You're doing this for all 20 stocks.
+
+Making the Move: If all 20 stocks show bearish signs (closing price < SMA and SMA angle <= -15 degrees), 
+and you're not already short, it's time to sell short. This is your signal that the market's likely to keep dropping.
+
+Closing the Deal: Set your profit target at $80 and your stop loss at $40. This is where you decide how much you're willing to risk for the potential gain.
+
+End-of-Day Exit: There's a safety net to cover your shorts just before the market closes, 
+with a buffer time set (5 minutes before the close) to ensure you're not left holding the bag overnight.
+}
+
+Inputs:
+    SMALength(7),
+    Datasets(20),
+    SMAngle(-15),
+    ProfitTargetAmount(80),
+    StopLossAmount(40); 
+
+Variables:
+	BearishSMACount(0),
+	SMAData1(0),
+    SMAData2(0),
+    SMAData3(0),
+    SMAData4(0),
+    SMAData5(0),
+    SMAData6(0),
+    SMAData7(0),
+    SMAData8(0),
+    SMAData9(0),
+    SMAData10(0),
+    SMAData11(0),
+    SMAData12(0),
+    SMAData13(0),
+    SMAData14(0),
+    SMAData15(0),
+    SMAData16(0),
+    SMAData17(0),
+    SMAData18(0),
+    SMAData19(0),
+    SMAData20(0),
+    SMAData21(0),
+    SMAData22(0),
+    SMAData23(0),
+    SMAData24(0),
+    SMAData25(0),
+    SMAData26(0),
+    SMAData27(0),
+    SMAData28(0),
+    SMAData29(0),
+    SMAData30(0),
+    SMAAngleData1(0),
+    SMAAngleData2(0),
+    SMAAngleData3(0),
+    SMAAngleData4(0),
+    SMAAngleData5(0),
+    SMAAngleData6(0),
+    SMAAngleData7(0),
+    SMAAngleData8(0),
+    SMAAngleData9(0),
+    SMAAngleData10(0),
+    SMAAngleData11(0),
+    SMAAngleData12(0),
+    SMAAngleData13(0),
+    SMAAngleData14(0),
+    SMAAngleData15(0),
+    SMAAngleData16(0),
+    SMAAngleData17(0),
+    SMAAngleData18(0),
+    SMAAngleData19(0),
+    SMAAngleData20(0),
+    SMAAngleData21(0),
+    SMAAngleData22(0),
+    SMAAngleData23(0),
+    SMAAngleData24(0),
+    SMAAngleData25(0),
+    SMAAngleData26(0),
+    SMAAngleData27(0),
+    SMAAngleData28(0),
+    SMAAngleData29(0),
+    SMAAngleData30(0),
+    AlignmentCount(0),
+    EndofDayBuffer(5),
+    DegreesPerRadian(57.29577951308232); 
+
+// Calculate the SMA for each ticker's closing price
+SMAData1 = Average(Close of Data1, SMALength);
+SMAData2 = Average(Close of Data2, SMALength);
+SMAData3 = Average(Close of Data3, SMALength);
+SMAData4 = Average(Close of Data4, SMALength);
+SMAData5 = Average(Close of Data5, SMALength);
+SMAData6 = Average(Close of Data6, SMALength);
+SMAData7 = Average(Close of Data7, SMALength);
+SMAData8 = Average(Close of Data8, SMALength);
+SMAData9 = Average(Close of Data9, SMALength);
+SMAData10 = Average(Close of Data10, SMALength);
+SMAData11 = Average(Close of Data11, SMALength);
+SMAData12 = Average(Close of Data12, SMALength);
+SMAData13 = Average(Close of Data13, SMALength);
+SMAData14 = Average(Close of Data14, SMALength);
+SMAData15 = Average(Close of Data15, SMALength);
+SMAData16 = Average(Close of Data16, SMALength);
+SMAData17 = Average(Close of Data17, SMALength);
+SMAData18 = Average(Close of Data18, SMALength);
+SMAData19 = Average(Close of Data19, SMALength);
+SMAData20 = Average(Close of Data20, SMALength);
+SMAData21 = Average(Close of Data21, SMALength);
+SMAData22 = Average(Close of Data22, SMALength);
+SMAData23 = Average(Close of Data23, SMALength);
+SMAData24 = Average(Close of Data24, SMALength);
+SMAData25 = Average(Close of Data25, SMALength);
+SMAData26 = Average(Close of Data26, SMALength);
+SMAData27 = Average(Close of Data27, SMALength);
+SMAData28 = Average(Close of Data28, SMALength);
+SMAData29 = Average(Close of Data29, SMALength);
+SMAData30 = Average(Close of Data30, SMALength);
+
+// Now, calculate the angle of the SMA for each DataX
+SMAAngleData1 = Arctangent((SMAData1 - SMAData1[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData2 = Arctangent((SMAData2 - SMAData2[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData3 = Arctangent((SMAData3 - SMAData3[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData4 = Arctangent((SMAData4 - SMAData4[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData5 = Arctangent((SMAData5 - SMAData5[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData6 = Arctangent((SMAData6 - SMAData6[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData7 = Arctangent((SMAData7 - SMAData7[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData8 = Arctangent((SMAData8 - SMAData8[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData9 = Arctangent((SMAData9 - SMAData9[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData10 = Arctangent((SMAData10 - SMAData10[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData11 = Arctangent((SMAData11 - SMAData11[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData12 = Arctangent((SMAData12 - SMAData12[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData13 = Arctangent((SMAData13 - SMAData13[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData14 = Arctangent((SMAData14 - SMAData14[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData15 = Arctangent((SMAData15 - SMAData15[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData16 = Arctangent((SMAData16 - SMAData16[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData17 = Arctangent((SMAData17 - SMAData17[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData18 = Arctangent((SMAData18 - SMAData18[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData19 = Arctangent((SMAData19 - SMAData19[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData20 = Arctangent((SMAData20 - SMAData20[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData21 = Arctangent((SMAData21 - SMAData21[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData22 = Arctangent((SMAData22 - SMAData22[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData23 = Arctangent((SMAData23 - SMAData23[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData24 = Arctangent((SMAData24 - SMAData24[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData25 = Arctangent((SMAData25 - SMAData25[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData26 = Arctangent((SMAData26 - SMAData26[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData27 = Arctangent((SMAData27 - SMAData27[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData28 = Arctangent((SMAData28 - SMAData28[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData29 = Arctangent((SMAData29 - SMAData29[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData30 = Arctangent((SMAData30 - SMAData30[1]) / SMALength) * DegreesPerRadian;
+
+If CurrentBar > SMALength Then Begin
+    AlignmentCount = 0;
+
+    // Reset bearish count each bar
+    BearishSMACount = 0; 
+
+    // Loop through each DataX, checking for bearish conditions based on SMA and its angle
+    // For each DataX:
+    // If the close is below the SMA and the angle of the SMA is less than the required angle, increment BearishSMACount
+    
+    If Close of Data1 < Average(Close of Data1, SMALength) Then Begin
+        If SMAAngleData1 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data2 < Average(Close of Data2, SMALength) Then Begin
+        If SMAAngleData2 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data3 < Average(Close of Data3, SMALength) Then Begin
+        If SMAAngleData3 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data4 < Average(Close of Data4, SMALength) Then Begin
+        If SMAAngleData4 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data5 < Average(Close of Data5, SMALength) Then Begin
+        If SMAAngleData5 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data6 < Average(Close of Data6, SMALength) Then Begin
+        If SMAAngleData6 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data7 < Average(Close of Data7, SMALength) Then Begin
+        If SMAAngleData7 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data8 < Average(Close of Data8, SMALength) Then Begin
+        If SMAAngleData8 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data9 < Average(Close of Data9, SMALength) Then Begin
+        If SMAAngleData9 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data10 < Average(Close of Data10, SMALength) Then Begin
+        If SMAAngleData10 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data11 < Average(Close of Data11, SMALength) Then Begin
+        If SMAAngleData11 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data12 < Average(Close of Data12, SMALength) Then Begin
+        If SMAAngleData12 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data13 < Average(Close of Data13, SMALength) Then Begin
+        If SMAAngleData13 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data14 < Average(Close of Data14, SMALength) Then Begin
+        If SMAAngleData14 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data15 < Average(Close of Data15, SMALength) Then Begin
+        If SMAAngleData15 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data16 < Average(Close of Data16, SMALength) Then Begin
+        If SMAAngleData16 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data17 < Average(Close of Data17, SMALength) Then Begin
+        If SMAAngleData17 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data18 < Average(Close of Data18, SMALength) Then Begin
+        If SMAAngleData18 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data19 < Average(Close of Data19, SMALength) Then Begin
+        If SMAAngleData19 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data20 < Average(Close of Data20, SMALength) Then Begin
+        If SMAAngleData20 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data21 < Average(Close of Data21, SMALength) Then Begin
+        If SMAAngleData21 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data22 < Average(Close of Data22, SMALength) Then Begin
+        If SMAAngleData22 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data23 < Average(Close of Data23, SMALength) Then Begin
+        If SMAAngleData23 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data24 < Average(Close of Data24, SMALength) Then Begin
+        If SMAAngleData24 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data25 < Average(Close of Data25, SMALength) Then Begin
+        If SMAAngleData25 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data26 < Average(Close of Data26, SMALength) Then Begin
+        If SMAAngleData26 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data27 < Average(Close of Data27, SMALength) Then Begin
+        If SMAAngleData27 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data28 < Average(Close of Data28, SMALength) Then Begin
+        If SMAAngleData28 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data29 < Average(Close of Data29, SMALength) Then Begin
+        If SMAAngleData29 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    If Close of Data30 < Average(Close of Data30, SMALength) Then Begin
+        If SMAAngleData30 <= SMAngle Then BearishSMACount = BearishSMACount + 1;
+    end;
+    
+
+    // Execute a short order if the market is not already short and the bearish conditions are met
+    If (MarketPosition = 0) and (BearishSMACount >= Datasets) Then Begin
+        SellShort ("Go_Short") next bar at market;
+    End;
+End;
+
+// Setting the Profit Target and Stop Loss upon entry    
+    
+[IntrabarOrderGeneration = false]
+
+inputs: 
+	PositionBasis( false ) [DisplayName = "PositionBasis", ToolTip = 
+	 "Enter true if currency amounts (profit targets, stops, etc.) are for the entire position;  enter false if currency amounts are per share or per contract."], 
+	Amount( 5 ) [DisplayName = "Amount", ToolTip = 
+	 "Enter the amount of the profit target (Total position amount if PositionBasis is true; amount per share if PositionBasis is set to false)."];
+
+if PositionBasis then
+	SetStopPosition
+else
+	SetStopShare;
+
+SetProfitTarget( ProfitTargetAmount );
+
+[IntrabarOrderGeneration = false]
+
+
+if PositionBasis then
+	SetStopPosition
+else
+	SetStopShare ;
+
+SetStopLoss( StopLossAmount ) ;
+
+// Adjusted code to exit at the end of the day, considering a buffer before the session end remains unchanged
+If MarketPosition = -1 and Time >= SessionEndTime(0, 1) - EndofDayBuffer Then Begin
+    BuyToCover ("Last minute cover") this bar on close; // Adjusted to cover at the current bar's close
+End;

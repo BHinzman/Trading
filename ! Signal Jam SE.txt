@@ -1,0 +1,94 @@
+{ Combined Sell Entry (SE) Strategy with MACD, RSI, Bollinger Bands, and Single Moving Average Cross }
+
+inputs:  
+    { MACD Inputs }
+    FastLengthMACD( 12 ),
+    SlowLengthMACD( 26 ),
+    MACDLength( 9 ),
+    { RSI Inputs }
+    RSILength( 14 ),
+    OverBought( 70 ), { Adjusted for sell-side }
+    { Bollinger Band Inputs }
+    BBLength( 20 ),
+    NumDevsUp( 2 ), { Adjusted for sell-side }
+    { Single Moving Average Inputs }
+    Price( Close ),
+    Length( 7 ),
+    ConfirmBars( 2 ), { Same as for buy-side }
+    { User-defined Input for Trade Execution Window and Minimum Indicators }
+    BarsAfterSignal( 5 ),
+    MinIndicatorsForSell( 3 ); { Adjusted for sell-side, not counting SMA itself }
+
+variables:
+    { MACD Variables }
+    MyMACD( 0 ),
+    MACDAvg( 0 ),
+    MACDDiff( 0 ),
+    { RSI Variable }
+    RSIValue( 0 ),
+    { Bollinger Band Variable }
+    UpperBand( 0 ), { Adjusted for sell-side }
+    { Single Moving Average Variables }
+    SMAValue( 0 ), { Same as for buy-side }
+    Counter( 0 ), { Updated Variable for SMA confirmation }
+    { Signal Variables }
+    BearishSignalMACD( false ),
+    BearishSignalRSI( false ),
+    BearishSignalBB( false ),
+    BelowSMA( false ), { Directly check if Price < SMAValue }
+    BarsSinceSignal( 0 ),
+    InitialSignal( false ),
+    BearishIndicatorsCount( 0 );
+
+{ Calculate MACD, RSI, and SMA Value }
+MyMACD = MACD( Close, FastLengthMACD, SlowLengthMACD );
+MACDAvg = XAverage( MyMACD, MACDLength );
+MACDDiff = MyMACD - MACDAvg;
+RSIValue = RSI( Close, RSILength );
+SMAValue = AverageFC( Price, Length );
+
+{ Calculate Bollinger Band }
+UpperBand = BollingerBand( Close, BBLength, NumDevsUp );
+
+{ Update Below SMA Check }
+BelowSMA = Price < SMAValue;
+
+{ Update Bearish Signals excluding SMA as a prerequisite }
+BearishSignalMACD = BelowSMA and CurrentBar > 2 and MACDDiff crosses under 0;
+BearishSignalRSI = BelowSMA and CurrentBar > 1 and RSIValue crosses under OverBought;
+BearishSignalBB = BelowSMA and CurrentBar > 1 and Close crosses under UpperBand;
+
+{ Count Bearish Indicators excluding SMA }
+BearishIndicatorsCount = 0;
+if BearishSignalMACD then BearishIndicatorsCount = BearishIndicatorsCount + 1;
+if BearishSignalRSI then BearishIndicatorsCount = BearishIndicatorsCount + 1;
+if BearishSignalBB then BearishIndicatorsCount = BearishIndicatorsCount + 1;
+
+{ Adjust Initial Signal to only consider Below SMA condition }
+if BelowSMA and (BearishIndicatorsCount > 0) then
+    begin
+    if InitialSignal = false then
+        begin
+        InitialSignal = true;
+        BarsSinceSignal = 0;
+        end
+    else if BarsSinceSignal < BarsAfterSignal then
+        BarsSinceSignal = BarsSinceSignal + 1;
+    end
+else
+    begin
+    InitialSignal = false;
+    BarsSinceSignal = 0;
+    end;
+
+{ Sell/Short Logic within Window }
+{ Ensure stock is below SMA and enough bearish indicators are present excluding SMA for sell signal }
+if InitialSignal and BarsSinceSignal <= BarsAfterSignal and BearishIndicatorsCount >= MinIndicatorsForSell then
+    begin
+    Sell Short ( "Combined_SE_Window" ) next bar at market;
+    InitialSignal = false;
+    end;
+
+{ Reset Counter After Trade Execution }
+if MarketPosition = -1 then
+    BarsSinceSignal = 0;

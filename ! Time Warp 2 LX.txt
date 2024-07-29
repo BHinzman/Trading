@@ -1,0 +1,67 @@
+Inputs:
+	RSILength(14),
+	RSIOverSold(20),
+	SMALength(3),
+	RequiredBearishRSIs(6),
+	RequiredBearishSMAs(6); // Criteria for bearish scenario
+
+Vars:
+	BearishSMACount(0),
+	BearishRSICount(0),
+	MyRSI1(0),
+	MyRSI2(0),
+	MyRSI3(0),
+	MyRSI4(0),
+	MyRSI5(0),
+	MyRSI6(0),
+	SMAData1(0),
+	SMAData2(0),
+	SMAData3(0),
+	SMAData4(0),
+	SMAData5(0),
+	SMAData6(0),
+	EndOfDayBuffer(5);
+
+// Calculate the SMA for each data series' closing price
+SMAData1 = Average(Close of Data1, SMALength);
+SMAData2 = Average(Close of Data2, SMALength);
+SMAData3 = Average(Close of Data3, SMALength);
+SMAData4 = Average(Close of Data4, SMALength);
+SMAData5 = Average(Close of Data5, SMALength);
+SMAData6 = Average(Close of Data6, SMALength);
+
+// Ensure we have enough bars to perform calculations
+If CurrentBar > RSILength Then Begin
+	BearishRSICount = 0;
+
+	// Calculate the RSI for each data series' closing price and increment bearish count if conditions are met
+	MyRSI1 = RSI(Close of Data1, RSILength);
+	If MyRSI1 < RSIOverSold Then BearishRSICount = BearishRSICount + 1;
+	MyRSI2 = RSI(Close of Data2, RSILength);
+	If MyRSI2 < RSIOverSold Then BearishRSICount = BearishRSICount + 1;
+	MyRSI3 = RSI(Close of Data3, RSILength);
+	If MyRSI3 < RSIOverSold Then BearishRSICount = BearishRSICount + 1;
+	MyRSI4 = RSI(Close of Data4, RSILength);
+	If MyRSI4 < RSIOverSold Then BearishRSICount = BearishRSICount + 1;
+	MyRSI5 = RSI(Close of Data5, RSILength);
+	If MyRSI5 < RSIOverSold Then BearishRSICount = BearishRSICount + 1;
+	MyRSI6 = RSI(Close of Data6, RSILength);
+	If MyRSI6 < RSIOverSold Then BearishRSICount = BearishRSICount + 1;
+End;
+
+If CurrentBar > SMALength Then Begin
+    BearishSMACount = 0;
+
+    // Compare the current close for each data series against its SMA for bearish signals
+    If Close of Data1 < SMAData1 Then BearishSMACount = BearishSMACount + 1;
+    If Close of Data2 < SMAData2 Then BearishSMACount = BearishSMACount + 1;
+    If Close of Data3 < SMAData3 Then BearishSMACount = BearishSMACount + 1;
+    If Close of Data4 < SMAData4 Then BearishSMACount = BearishSMACount + 1;
+    If Close of Data5 < SMAData5 Then BearishSMACount = BearishSMACount + 1;
+    If Close of Data6 < SMAData6 Then BearishSMACount = BearishSMACount + 1;
+
+    // Enter a short position if bearish conditions are met
+    If (MarketPosition = 1) and (BearishSMACount >= RequiredBearishSMAs) and (BearishRSICount >= RequiredBearishRSIs) Then Begin
+        Sell Short ("Go_Short") Next Bar at Market;
+    End;
+End;

@@ -1,0 +1,43 @@
+inputs:
+	BollingerPrice( Close ) [DisplayName = "BollingerPrice", ToolTip = 
+	 "Enter an EasyLanguage expression."],
+	TestPriceLBand( Close ) [DisplayName = "TestPriceLBand", ToolTip = 
+	 "Test Price Lower Band.  Enter an EasyLanguage expression.  If this value crosses over the lower band, an buy signal is triggered."],
+	Length( 20 ) [DisplayName = "Length", ToolTip = 
+	 "Enter the number of bars over which to calculate the bands."],
+	NumDevsDn( 2 ) [DisplayName = "NumDevsDn", ToolTip = 
+	 "Number of Standard Deviations Down.  Enter the number of standard deviations to use in the calculation of the lower Bollinger band."];
+	
+
+variables:
+	DegreesPerRadian(57.29577951308232),
+	SMAAngleData1(0),
+	SMAData1(0),
+	UPData1(0),
+	UPAngle1(0),
+	DownData1(0),
+	DownAngle1(0),
+	double Avg( 0 ),
+	double SDev( 0 ),
+	double LowerBand( 0 ),
+	double UpperBand( 0 );
+
+LowerBand = BollingerBand( BollingerPrice, Length, -NumDevsDn );
+
+SMAData1 = Average(Close of Data1, Length);
+SMAAngleData1 = Arctangent((SMAData1 - SMAData1[1]) / Length) * DegreesPerRadian;
+
+UPData1 = Average(UpperBand, Length);
+UPAngle1 = Arctangent((UPData1 - UPData1[1]) / Length) * DegreesPerRadian;
+
+DownData1 = Average(LowerBand, Length);
+DownAngle1 = Arctangent((DownData1 - DownData1[1]) / Length) * DegreesPerRadian;
+
+{ 
+CB > 1 check used to avoid spurious cross confirmation at CB = 1; don't buy 
+if next bar completely below current LowerBand, but wait for next crossing 
+condition - an example of a non-persistent setup triggering a stop order that
+is replaced until hit
+}
+if  (MarketPosition = -1) and SMAAngleData1 >= 0 and UPAngle1 >=0 and DownAngle1 >= 0 then
+	Buy ( !( "Long--Loss" ) ) next bar at LowerBand stop;

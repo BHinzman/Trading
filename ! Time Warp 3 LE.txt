@@ -1,0 +1,70 @@
+Inputs:
+    SMALength(21),
+    BarsWithinAlignment(1), // Utilized correctly in the logic now
+    RequiredBullishSMAs(12);
+
+Vars:
+    BullishSMACount(0),
+    SMAData1(0),
+    SMAData2(0),
+    SMAData3(0),
+    SMAData4(0),
+    SMAData5(0),
+    SMAData6(0),
+    SMAData7(0),
+    SMAData8(0),
+    SMAData9(0),
+    SMAData10(0),
+    SMAData11(0),
+    SMAData12(0),
+    EndofDayBuffer(5),
+    AlignmentCount(0); // To track alignment within the specified bars accurately
+
+// Calculate the SMA for each ticker's closing price
+SMAData1 = Average(Close of Data1, SMALength);
+SMAData2 = Average(Close of Data2, SMALength);
+SMAData3 = Average(Close of Data3, SMALength);
+SMAData4 = Average(Close of Data4, SMALength);
+SMAData5 = Average(Close of Data5, SMALength);
+SMAData6 = Average(Close of Data6, SMALength);
+SMAData7 = Average(Close of Data7, SMALength);
+SMAData8 = Average(Close of Data8, SMALength);
+SMAData9 = Average(Close of Data9, SMALength);
+SMAData10 = Average(Close of Data10, SMALength);
+SMAData11 = Average(Close of Data11, SMALength);
+SMAData12 = Average(Close of Data12, SMALength);
+
+If CurrentBar > SMALength Then Begin
+    AlignmentCount = 0;
+
+    // Check for alignment within the specified bars, looking back from the current bar
+    For Value1 = 0 to BarsWithinAlignment - 1 Begin
+        BullishSMACount = 0;
+        
+        // Recalculate BullishSMACount for each bar within the alignment window
+        If Close[Value1] of Data1 > SMAData1[Value1] then BullishSMACount = BullishSMACount + 1;
+        If Close[Value1] of Data2 > SMAData2[Value1] then BullishSMACount = BullishSMACount + 1;
+        If Close[Value1] of Data3 > SMAData3[Value1] then BullishSMACount = BullishSMACount + 1;
+        If Close[Value1] of Data4 > SMAData4[Value1] then BullishSMACount = BullishSMACount + 1;
+        If Close[Value1] of Data5 > SMAData5[Value1] then BullishSMACount = BullishSMACount + 1;
+        If Close[Value1] of Data6 > SMAData6[Value1] then BullishSMACount = BullishSMACount + 1;
+        If Close[Value1] of Data7 > SMAData7[Value1] then BullishSMACount = BullishSMACount + 1;
+        If Close[Value1] of Data8 > SMAData8[Value1] then BullishSMACount = BullishSMACount + 1;
+        If Close[Value1] of Data9 > SMAData9[Value1] then BullishSMACount = BullishSMACount + 1;
+        If Close[Value1] of Data10 > SMAData10[Value1] then BullishSMACount = BullishSMACount + 1;
+        If Close[Value1] of Data11 > SMAData11[Value1] then BullishSMACount = BullishSMACount + 1;
+        If Close[Value1] of Data12 > SMAData12[Value1] then BullishSMACount = BullishSMACount + 1;
+
+        If BullishSMACount >= RequiredBullishSMAs then AlignmentCount = AlignmentCount + 1;
+    End;
+
+    // Act based on the count of bullish SMAs within the alignment bars
+    If (MarketPosition <> 1) and (AlignmentCount >= 1) Then Begin // AlignmentCount check adjusted for clarity
+        Buy ("Go_Long") next bar at market; // Buy to open if bullish criteria are met
+    End;
+End;
+
+// Adjusted code to exit at the end of the day, considering a buffer before the session end
+If MarketPosition = 1 and Time >= SessionEndTime(0, 1) - EndofDayBuffer Then Begin
+    Sell ("Last minute rally") this bar on close; // Adjusted to sell at the current bar's close
+End;

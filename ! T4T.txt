@@ -1,0 +1,55 @@
+Inputs: 
+	ATRLength(14), 
+	ATRMultiplier(2), 
+	ProfitTargetAmount(40),
+    StopLossAmount(40),
+    Multiplier(1.50);
+
+Variables: 
+	atrValue(0),
+	myEntryPrice(0), // Changed from 'entryPrice' to 'myEntryPrice' to avoid conflict
+    stoppedOutFlag(False); // New variable to track if the last position was stopped out
+
+// Calculate ATR based on the user-defined length
+atrValue = AvgTrueRange(ATRLength);
+
+// Strategy logic
+If MarketPosition = 0 Then Begin
+    // If there's no current position, enter based on the previous bar's movement
+    If Close > Open Then Begin
+        // Market moved up, go long
+        Buy ("LongEntry") Next Bar at Close + (ATRMultiplier * atrValue) Stop;
+        myEntryPrice = Close + (ATRMultiplier * atrValue);
+    End 
+    Else Begin
+        // Market moved down, go short
+        SellShort ("ShortEntry") Next Bar at Close - (ATRMultiplier * atrValue) Stop;
+        myEntryPrice = Close - (ATRMultiplier * atrValue);
+    End;
+    stoppedOutFlag = False; // Reset the flag on a new entry
+End;
+
+// Check for stop loss and reverse if hit
+If MarketPosition = 1 And Low <= myEntryPrice - (ATRMultiplier * atrValue) Then Begin
+    // Long position stopped out, reverse to short
+    SellShort ("LongStoppedRevShort") Next Bar at Market;
+    myEntryPrice = Close - (ATRMultiplier * atrValue);
+    stoppedOutFlag = True; // Set the flag as stopped out
+End 
+Else If MarketPosition = -1 And High >= myEntryPrice + (ATRMultiplier * atrValue) Then Begin
+    // Short position stopped out, reverse to long
+    Buy ("ShortStoppedRevLong") Next Bar at Market;
+    myEntryPrice = Close + (ATRMultiplier * atrValue);
+    stoppedOutFlag = True; // Set the flag as stopped out
+End;
+
+// Adjust profit targets based on initial or reversed entry
+If MarketPosition <> 0 Then Begin
+    // If stoppedOutFlag is true, increase the profit target for the next trade
+    If stoppedOutFlag Then Begin
+        SetProfitTarget(ProfitTargetAmount * Multiplier); // Increase profit target by 50%
+    End Else Begin
+        SetProfitTarget(ProfitTargetAmount); // Regular profit target
+    End;
+    SetStopLoss(StopLossAmount);
+End;

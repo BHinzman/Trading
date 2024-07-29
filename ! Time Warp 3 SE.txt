@@ -1,0 +1,70 @@
+Inputs:
+    SMALength(21),
+    BarsWithinAlignment(1), 
+    RequiredBearishSMAs(12); 
+
+Vars:
+    BearishSMACount(0),
+    SMAData1(0),
+    SMAData2(0),
+    SMAData3(0),
+    SMAData4(0),
+    SMAData5(0),
+    SMAData6(0),
+    SMAData7(0),
+    SMAData8(0),
+    SMAData9(0),
+    SMAData10(0),
+    SMAData11(0),
+    SMAData12(0),
+    EndofDayBuffer(5),
+    AlignmentCount(0); 
+
+// Calculate the SMA for each ticker's closing price
+SMAData1 = Average(Close of Data1, SMALength);
+SMAData2 = Average(Close of Data2, SMALength);
+SMAData3 = Average(Close of Data3, SMALength);
+SMAData4 = Average(Close of Data4, SMALength);
+SMAData5 = Average(Close of Data5, SMALength);
+SMAData6 = Average(Close of Data6, SMALength);
+SMAData7 = Average(Close of Data7, SMALength);
+SMAData8 = Average(Close of Data8, SMALength);
+SMAData9 = Average(Close of Data9, SMALength);
+SMAData10 = Average(Close of Data10, SMALength);
+SMAData11 = Average(Close of Data11, SMALength);
+SMAData12 = Average(Close of Data12, SMALength);
+
+If CurrentBar > SMALength Then Begin
+    AlignmentCount = 0;
+
+    // Looking back from the current bar for bearish alignment
+    For Value1 = 0 to BarsWithinAlignment - 1 Begin
+        BearishSMACount = 0;
+        
+        // Flip the logic: Count bearish instances now
+        If Close[Value1] of Data1 < SMAData1[Value1] then BearishSMACount = BearishSMACount + 1;
+        If Close[Value1] of Data2 < SMAData2[Value1] then BearishSMACount = BearishSMACount + 1;
+        If Close[Value1] of Data3 < SMAData3[Value1] then BearishSMACount = BearishSMACount + 1;
+        If Close[Value1] of Data4 < SMAData4[Value1] then BearishSMACount = BearishSMACount + 1;
+        If Close[Value1] of Data5 < SMAData5[Value1] then BearishSMACount = BearishSMACount + 1;
+        If Close[Value1] of Data6 < SMAData6[Value1] then BearishSMACount = BearishSMACount + 1;
+        If Close[Value1] of Data7 < SMAData7[Value1] then BearishSMACount = BearishSMACount + 1;
+        If Close[Value1] of Data8 < SMAData8[Value1] then BearishSMACount = BearishSMACount + 1;
+        If Close[Value1] of Data9 < SMAData9[Value1] then BearishSMACount = BearishSMACount + 1;
+        If Close[Value1] of Data10 < SMAData10[Value1] then BearishSMACount = BearishSMACount + 1;
+        If Close[Value1] of Data11 < SMAData11[Value1] then BearishSMACount = BearishSMACount + 1;
+        If Close[Value1] of Data12 < SMAData12[Value1] then BearishSMACount = BearishSMACount + 1;
+
+        If BearishSMACount >= RequiredBearishSMAs then AlignmentCount = AlignmentCount + 1;
+    End;
+
+    // Trigger a short entry if the bearish alignment is right
+    If (MarketPosition <> -1) and (AlignmentCount >= 1) Then Begin
+        SellShort ("Go_Short") next bar at market; // Dive in for a short if the stars align
+    End;
+End;
+
+// Keeping the exit strategy sharp and ready
+If MarketPosition = -1 and Time >= SessionEndTime(0, 1) - EndofDayBuffer Then Begin
+    BuyToCover ("Close_Short") this bar on close; // Time to pull out and count those gains
+End;

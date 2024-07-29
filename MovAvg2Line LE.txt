@@ -1,0 +1,20 @@
+inputs: 
+	FastPrice( Close ) [DisplayName = "FastPrice", ToolTip = 
+	 "Enter an EasyLanguage expression to use in calculation of shorter length moving average."],
+	SlowPrice( Close ) [DisplayName = "SlowPrice", ToolTip = 
+	 "Enter an EasyLanguage expression to use in calculation of longer length moving average."],
+	FastLength( 9 ) [DisplayName = "FastLength", ToolTip = 
+	 "Enter number of bars to use in calculation of shorter length moving average."], 
+	SlowLength( 18 ) [DisplayName = "SlowLength", ToolTip = 
+	 "Enter number of bars to use in calculation of longer length moving average."];
+	
+variables: 
+	FastAvg( 0 ), 
+	SlowAvg( 0 );
+
+FastAvg = AverageFC( FastPrice, FastLength );
+SlowAvg = AverageFC( SlowPrice, SlowLength );
+
+{ CB > 1 check used to avoid spurious cross confirmation at CB = 1 }
+if CurrentBar > 1 and FastAvg crosses over SlowAvg then
+	Buy ( !( "MA2CrossLE" ) ) next bar at market;

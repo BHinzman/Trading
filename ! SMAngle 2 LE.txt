@@ -1,0 +1,207 @@
+
+Inputs:
+    SMALength(5),
+    Datasets(16),
+    SMAngle(5),
+    ProfitTargetAmount(80),
+    StopLossAmount(40),
+    PositionBasis( false ) [DisplayName = "PositionBasis", ToolTip = 
+	 "Enter true if currency amounts (profit targets, stops, etc.) are for the entire position;  enter false if currency amounts are per share or per contract."], 
+	Amount( 5 ) [DisplayName = "Amount", ToolTip = 
+	 "Enter the amount of the profit target (Total position amount if PositionBasis is true; amount per share if PositionBasis is set to false)."],
+    int MarketOpenTime(930),
+    int NoTradeEndTime(1000);
+    	
+
+Variables:
+	BullishSMACount(0),
+    SMAData1(0),
+    SMAData2(0),
+    SMAData3(0),
+    SMAData4(0),
+    SMAData5(0),
+    SMAData6(0),
+    SMAData7(0),
+    SMAData8(0),
+    SMAData9(0),
+    SMAData10(0),
+    SMAData11(0),
+    SMAData12(0),
+    SMAData13(0),
+    SMAData14(0),
+    SMAData15(0),
+    SMAData16(0),
+    SMAData17(0),
+    SMAData18(0),
+    SMAData19(0),
+    SMAData20(0),
+    SMAAngleData1(0),
+    SMAAngleData2(0),
+    SMAAngleData3(0),
+    SMAAngleData4(0),
+    SMAAngleData5(0),
+    SMAAngleData6(0),
+    SMAAngleData7(0),
+    SMAAngleData8(0),
+    SMAAngleData9(0),
+    SMAAngleData10(0),
+    SMAAngleData11(0),
+    SMAAngleData12(0),
+    SMAAngleData13(0),
+    SMAAngleData14(0),
+    SMAAngleData15(0),
+    SMAAngleData16(0),
+    SMAAngleData17(0),
+    SMAAngleData18(0),
+    SMAAngleData19(0),
+    SMAAngleData20(0),
+    AlignmentCount(0),
+    EndofDayBuffer(5),
+    DegreesPerRadian(57.29577951308232); // Conversion factor from radians to degrees
+
+// Check current time against defined trading window
+If Time > NoTradeEndTime or Time < MarketOpenTime then Begin
+
+// Calculate the SMA for each ticker's closing price
+SMAData1 = Average(Close of Data1, SMALength);
+SMAData2 = Average(Close of Data2, SMALength);
+SMAData3 = Average(Close of Data3, SMALength);
+SMAData4 = Average(Close of Data4, SMALength);
+SMAData5 = Average(Close of Data5, SMALength);
+SMAData6 = Average(Close of Data6, SMALength);
+SMAData7 = Average(Close of Data7, SMALength);
+SMAData8 = Average(Close of Data8, SMALength);
+SMAData9 = Average(Close of Data9, SMALength);
+SMAData10 = Average(Close of Data10, SMALength);
+SMAData11 = Average(Close of Data11, SMALength);
+SMAData12 = Average(Close of Data12, SMALength);
+SMAData13 = Average(Close of Data13, SMALength);
+SMAData14 = Average(Close of Data14, SMALength);
+SMAData15 = Average(Close of Data15, SMALength);
+SMAData16 = Average(Close of Data16, SMALength);
+SMAData17 = Average(Close of Data17, SMALength);
+SMAData18 = Average(Close of Data18, SMALength);
+SMAData19 = Average(Close of Data19, SMALength);
+SMAData20 = Average(Close of Data20, SMALength);
+
+// Now, calculate the angle of the SMA for each DataX
+SMAAngleData1 = Arctangent((SMAData1 - SMAData1[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData2 = Arctangent((SMAData2 - SMAData2[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData3 = Arctangent((SMAData3 - SMAData3[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData4 = Arctangent((SMAData4 - SMAData4[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData5 = Arctangent((SMAData5 - SMAData5[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData6 = Arctangent((SMAData6 - SMAData6[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData7 = Arctangent((SMAData7 - SMAData7[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData8 = Arctangent((SMAData8 - SMAData8[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData9 = Arctangent((SMAData9 - SMAData9[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData10 = Arctangent((SMAData10 - SMAData10[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData11 = Arctangent((SMAData11 - SMAData11[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData12 = Arctangent((SMAData12 - SMAData12[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData13 = Arctangent((SMAData13 - SMAData13[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData14 = Arctangent((SMAData14 - SMAData14[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData15 = Arctangent((SMAData15 - SMAData15[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData16 = Arctangent((SMAData16 - SMAData16[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData17 = Arctangent((SMAData17 - SMAData17[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData18 = Arctangent((SMAData18 - SMAData18[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData19 = Arctangent((SMAData19 - SMAData19[1]) / SMALength) * DegreesPerRadian;
+SMAAngleData20 = Arctangent((SMAData20 - SMAData20[1]) / SMALength) * DegreesPerRadian;
+
+
+If CurrentBar > SMALength Then Begin
+    AlignmentCount = 0;
+
+// Check the SMA and its angle for bullish conditions
+BullishSMACount = 0; // Reset count each bar
+
+    // Only proceed if both the SMA count and the SMA angle meet the bullish criteria simultaneously
+    If Close of Data1 > Average(Close of Data1, SMALength) Then Begin
+        If SMAAngleData1 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end; 
+	If Close of Data2 > Average(Close of Data2, SMALength) Then Begin
+        If SMAAngleData2 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data3 > Average(Close of Data3, SMALength) Then Begin
+        If SMAAngleData3 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data4 > Average(Close of Data4, SMALength) Then Begin
+        If SMAAngleData4 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data5 > Average(Close of Data5, SMALength) Then Begin
+        If SMAAngleData5 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data6 > Average(Close of Data6, SMALength) Then Begin
+        If SMAAngleData6 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data7 > Average(Close of Data7, SMALength) Then Begin
+        If SMAAngleData7 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data8 > Average(Close of Data8, SMALength) Then Begin
+        If SMAAngleData8 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data9 > Average(Close of Data9, SMALength) Then Begin
+        If SMAAngleData9 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data10 > Average(Close of Data10, SMALength) Then Begin
+        If SMAAngleData10 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data11 > Average(Close of Data11, SMALength) Then Begin
+        If SMAAngleData11 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data12 > Average(Close of Data12, SMALength) Then Begin
+        If SMAAngleData12 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data13 > Average(Close of Data13, SMALength) Then Begin
+        If SMAAngleData13 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data14 > Average(Close of Data14, SMALength) Then Begin
+        If SMAAngleData14 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data15 > Average(Close of Data15, SMALength) Then Begin
+        If SMAAngleData15 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data16 > Average(Close of Data16, SMALength) Then Begin
+        If SMAAngleData16 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data17 > Average(Close of Data17, SMALength) Then Begin
+        If SMAAngleData17 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data18 > Average(Close of Data18, SMALength) Then Begin
+        If SMAAngleData18 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data19 > Average(Close of Data19, SMALength) Then Begin
+        If SMAAngleData19 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+	If Close of Data20 > Average(Close of Data20, SMALength) Then Begin
+        If SMAAngleData20 >= SMAngle Then BullishSMACount = BullishSMACount + 1;
+	end;
+        
+        // Execute a buy order if the market is not already long
+        If (MarketPosition = 0) and (BullishSMACount >= Datasets) Then Begin
+            Buy ("Go_Long") next bar at market;
+        End;
+    End;
+    
+
+	
+if PositionBasis then
+	SetStopPosition
+else
+	SetStopShare;
+
+SetProfitTarget( ProfitTargetAmount );
+
+
+
+if PositionBasis then
+	SetStopPosition
+else
+	SetStopShare ;
+
+SetStopLoss( StopLossAmount ) ;
+
+// Adjusted code to exit at the end of the day, considering a buffer before the session end
+If MarketPosition = 1 and Time >= SessionEndTime(0, 1) - EndofDayBuffer Then Begin
+    Sell ("Last minute cover") this bar on close; // Adjusted to sell at the current bar's close
+End;
+
+End;

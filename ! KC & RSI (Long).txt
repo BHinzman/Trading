@@ -1,0 +1,41 @@
+inputs: 
+	LongProfitTarget(50),
+	LongStopLoss(50),
+	Price(Close),
+	Length(10),
+	NumATRs(1),
+	EndOfDayBuffer(5),
+	RSILength(4), 
+	OverSold(60);
+
+variables:
+	Avg(0),
+	Shift(0),
+	UpperBand(0),
+	RSIValue(0);
+
+if CurrentBar > 1 then begin
+	// Calculate Keltner Channel
+	Avg = AverageFC(Price, Length);
+	Shift = NumATRs * AvgTrueRange(Length);
+	UpperBand = Avg + Shift;
+
+	// Calculate RSI
+	RSIValue = RSI(Price, RSILength);
+
+	// Check for Keltner Channel and RSI Setup
+	if Price crosses Over UpperBand and RSIValue > OverSold then begin
+		Buy("CombinedLongEntry") Next Bar at Market;
+	end;
+end;
+
+// Set Profit Targets and Stop Losses
+if MarketPosition = 1 then begin
+	SetProfitTarget(LongProfitTarget);
+	SetStopLoss(LongStopLoss);
+end;
+
+// Exit positions at the end of the day with buffer
+if MarketPosition = 1 and Time >= SessionEndTime(0, 1) - EndOfDayBuffer then begin
+	Sell("LastMinuteCover") this bar on close;
+end;

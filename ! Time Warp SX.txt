@@ -1,0 +1,38 @@
+Inputs:
+    SMALength( 6 ),
+    BarsWithinAlignment( 1 ),
+    RequiredBearishSMAs( 6 ); // For bearish scenario, adjust as needed
+
+Vars:
+    BearishSMACount(0),
+    SMAData1(0),
+    SMAData2(0),
+    SMAData3(0),
+    SMAData4(0),
+    SMAData5(0),
+    SMAData6(0);
+
+// Calculate the SMA for each ticker's closing price
+SMAData1 = Average(Close of Data1, SMALength);
+SMAData2 = Average(Close of Data2, SMALength);
+SMAData3 = Average(Close of Data3, SMALength);
+SMAData4 = Average(Close of Data4, SMALength);
+SMAData5 = Average(Close of Data5, SMALength);
+SMAData6 = Average(Close of Data6, SMALength);
+
+If CurrentBar > SMALength Then Begin
+    BearishSMACount = 0;
+
+    // Compare the current close for each ticker against its SMA for bearish signals
+    If Close of Data1 < SMAData1 then BearishSMACount = BearishSMACount + 1;
+    If Close of Data2 < SMAData2 then BearishSMACount = BearishSMACount + 1;
+    If Close of Data3 < SMAData3 then BearishSMACount = BearishSMACount + 1;
+    If Close of Data4 < SMAData4 then BearishSMACount = BearishSMACount + 1;
+    If Close of Data5 < SMAData5 then BearishSMACount = BearishSMACount + 1;
+    If Close of Data6 < SMAData6 then BearishSMACount = BearishSMACount + 1;
+
+    // Act based on the count of bearish SMAs
+    If (MarketPosition = -1) and (BearishSMACount >= RequiredBearishSMAs) Then Begin
+        Buy ("Go_Short") next bar at market; // Sell short to open if bearish criteria are met
+    End;
+End;

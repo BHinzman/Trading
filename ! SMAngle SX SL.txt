@@ -1,0 +1,26 @@
+{ Search Tag: WA-Bollinger Bands SE }
+
+inputs:
+	BollingerPrice( Close ) [DisplayName = "BollingerPrice", ToolTip = 
+	 "Enter an EasyLanguage expression."],
+	TestPriceUBand( Close ) [DisplayName = "TestPriceUBand", ToolTip = 
+	 "Test Price Upper Band.  Enter an EasyLanguage expression.  If this value crosses under the upper band, a sell signal is triggered."],
+	Length( 20 ) [DisplayName = "Length", ToolTip = 
+	 "Enter the number of bars over which to calculate the bands."],
+	NumDevsUp( 2 ) [DisplayName = "NumDevsUp", ToolTip = 
+	 "Number of Standard Deviations Up.  Enter the number of standard deviations to use in the calculation of the upper Bollinger band."];
+
+variables:
+	UpperBand( 0 );
+
+UpperBand = BollingerBand( BollingerPrice, Length, NumDevsUp );
+
+{ 
+CB > 1 check used to avoid spurious cross confirmation at CB = 1; don't short 
+if next bar completely above current UpperBand, but wait for next crossing 
+condition - an example of a non-persistent set-up triggering a stop	order that 
+is replaced until hit
+}
+if (MarketPosition = -1) and TestPriceUBand crosses over UpperBand then
+	Buy ( !( "Short--Loss" ) ) next bar at UpperBand stop;
+

@@ -1,0 +1,46 @@
+Inputs: 
+	LongProfitTarget(20),
+    LongStopLoss(20),
+    ShortProfitTarget(20),
+    ShortStopLoss(20),
+	Length(14), 
+	OverBought(70),
+	OverSold(30);
+    
+Variables:
+	Price(Close),
+	RSIValue( 0 ),
+	EndofDayBuffer(5);
+	
+// Calculate the RSI
+RSIValue = RSI( Close, Length );
+
+// Strategy logic
+If MarketPosition = 0 Then Begin
+    // If there's no current position, enter based on the previous bar's movement
+    If Close > Open and RSIValue > OverBought Then Begin
+        // Market moved up and crossed the RSI bullish threshold, go long
+        Buy ("LongEntry") Next Bar at Close Stop;
+    End;
+  	If Close < Open and RSIValue < OverSold Then Begin
+        // Market moved up and crossed the RSI bearish threshold, go short
+        SellShort ("ShortEntry") Next Bar at Close Stop;
+    End;
+End;
+
+// Adjust profit targets based on initial or reversed entry
+If MarketPosition = 1 Then Begin
+    // For a long position, set profit target
+    SetProfitTarget(LongProfitTarget);
+    SetStopLoss(LongStopLoss);
+End 
+Else If MarketPosition = -1 Then Begin 
+    // For a short position, set profit target
+    SetProfitTarget(ShortProfitTarget);
+    SetStopLoss(ShortStopLoss);
+End;
+
+// Adjusted code to exit at the end of the day, considering a buffer before the session end
+If MarketPosition = 1 and Time >= SessionEndTime(0, 1) - EndofDayBuffer Then Begin
+    Sell ("Last minute cover") this bar on close; // Adjusted to sell at the current bar's close
+End;

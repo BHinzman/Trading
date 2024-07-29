@@ -1,0 +1,66 @@
+{ Combined Sell Entry (SE) Strategy with MACD, RSI, Bollinger Bands, and Single Moving Average Cross }
+
+inputs:  
+    FastLengthMACD( 12 ),
+    SlowLengthMACD( 26 ),
+    MACDLength( 9 ),
+    RSILength( 14 ),
+    OverBought( 70 ), { For Sell Entry }
+    BBLength( 20 ),
+    NumDevsUp( 2 ), { For Sell Entry }
+    Price( Close ),
+    Length( 7 ),
+    ConfirmBars( 2 ), { For sell-side confirmation }
+    BarsAfterSignal( 5 ),
+    MinIndicatorsForSell( 3 ); { For Sell logic }
+
+variables:
+    MyMACD( 0 ),
+    MACDAvg( 0 ),
+    MACDDiff( 0 ),
+    RSIValue( 0 ),
+    UpperBand( 0 ),
+    SMAValue( 0 ),
+    BearishSignalMACD( false ),
+    BearishSignalRSI( false ),
+    BearishSignalBB( false ),
+    BelowSMA( false ),
+    BarsSinceSignal( 0 ),
+    InitialSignal( false ),
+    BearishIndicatorsCount( 0 );
+
+{ Indicator Calculations }
+MyMACD = MACD( Close, FastLengthMACD, SlowLengthMACD );
+MACDAvg = XAverage( MyMACD, MACDLength );
+MACDDiff = MyMACD - MACDAvg;
+RSIValue = RSI( Close, RSILength );
+SMAValue = AverageFC( Price, Length );
+
+{ Calculate Bollinger Band }
+UpperBand = BollingerBand( Close, BBLength, NumDevsUp );
+
+{ Update Below SMA Check }
+BelowSMA = Price < SMAValue;
+
+{ Update Bearish Signals excluding SMA as a prerequisite }
+BearishSignalMACD = BelowSMA and CurrentBar > 2 and MACDDiff crosses below 0;
+BearishSignalRSI = BelowSMA and CurrentBar > 1 and RSIValue crosses below OverBought;
+BearishSignalBB = BelowSMA and CurrentBar > 1 and Close crosses below UpperBand;
+
+{ Count Bearish Indicators }
+BearishIndicatorsCount = 0;
+if BearishSignalMACD then BearishIndicatorsCount = BearishIndicatorsCount + 1;
+if BearishSignalRSI then BearishIndicatorsCount = BearishIndicatorsCount + 1;
+if BearishSignalBB then BearishIndicatorsCount = BearishIndicatorsCount + 1;
+
+{ Trading Logic }
+if MarketPosition = 1 and BearishIndicatorsCount >= MinIndicatorsForSell then begin
+    Sell ("Cls_Long") next bar at market; { Close long position before going short }
+    Sell Short ("Shrt_Aft_Lng") next bar at market; { Enter a short position after closing long }
+end else if MarketPosition <= 0 and BearishIndicatorsCount >= MinIndicatorsForSell and BelowSMA then begin
+    Sell Short ("Shrt_Direct") next bar at market; { Directly enter a short position if flat }
+end;
+
+{ Reset Counter After Trade Execution }
+if MarketPosition = -1 then
+    BarsSinceSignal = 0;

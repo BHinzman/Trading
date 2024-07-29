@@ -1,111 +1,63 @@
-{ Combined Long Entry (LE) Strategy with MACD, RSI, Bollinger Bands, Single Moving Average Cross, and 9/20 SMA Cross on 5-minute timeframe }
+{ Combined Long Entry (LE) Strategy with MACD, RSI, Bollinger Bands, and Single Moving Average Cross }
 
 inputs:  
-    { MACD Inputs }
     FastLengthMACD( 12 ),
     SlowLengthMACD( 26 ),
     MACDLength( 9 ),
-    { RSI Inputs }
     RSILength( 14 ),
     OverSold( 30 ),
-    { Bollinger Band Inputs }
     BBLength( 20 ),
     NumDevsDn( 2 ),
-    { Single Moving Average Inputs }
     Price( Close ),
     Length( 5 ),
-    ConfirmBars( 4 ), { New Input for SMA }
-    { 9/20 SMA Cross Inputs }
-    NinePerSMA(9)Data2,
-    TwentyPerSMA(20)Data2,
-    { User-defined Input for Trade Execution Window and Minimum Indicators }
+    ConfirmBars( 4 ),
     BarsAfterSignal( 5 ),
-    MinIndicatorsForBuy( 3 ); { Adjusted for SMA, not counting SMA itself }
+    MinIndicatorsForBuy( 3 );
 
 variables:
-    { MACD Variables }
-    MyMACD( 0 ), 
-    MACDAvg( 0 ), 
+    MyMACD( 0 ),
+    MACDAvg( 0 ),
     MACDDiff( 0 ),
-    { RSI Variable }
     RSIValue( 0 ),
-    { Bollinger Band Variable }
     LowerBand( 0 ),
-    { Single Moving Average Variables }
-    SMAValue( 0 ), { Used for checking if price is above SMA }
-    Counter( 0 ), { Updated Variable for SMA confirmation }
-    { 9/20 SMA Cross Variables }
-    NineSMAValue( 0 ),
-    TwentySMAValue( 0 ),
-    BullishCross( false ),
-    BearishCrossOccurred( false ), { Tracks if a bearish cross has occurred since the last bullish cross }
-    { Signal Variables }
+    SMAValue( 0 ),
+    Counter( 0 ),
     BullishSignalMACD( false ),
     BullishSignalRSI( false ),
     BullishSignalBB( false ),
-    AboveSMA( false ), { Directly check if Price > SMAValue }
+    AboveSMA( false ),
     BarsSinceSignal( 0 ),
     InitialSignal( false ),
     BullishIndicatorsCount( 0 );
 
-{ Calculate MACD, RSI, and SMA Value }
+{ Indicator Calculations }
 MyMACD = MACD( Close, FastLengthMACD, SlowLengthMACD );
 MACDAvg = XAverage( MyMACD, MACDLength );
 MACDDiff = MyMACD - MACDAvg;
 RSIValue = RSI( Close, RSILength );
 SMAValue = AverageFC( Price, Length );
-
-{ Calculate 9 and 20 SMA for the 5-minute timeframe }
-NineSMAValue = AverageFC( Close of data2, NinePerSMA);
-TwentySMAValue = AverageFC( Close of data2, TwentyPerSMA);
-
-{ Detecting the bullish and bearish cross }
-BullishCross = NineSMAValue crosses above TwentySMAValue;
-BearishCrossOccurred = if BullishCross then false else if NineSMAValue crosses below TwentySMAValue then true else BearishCrossOccurred;
-
-{ Calculate Bollinger Band }
 LowerBand = BollingerBand( Close, BBLength, -NumDevsDn );
 
-{ Update Above SMA Check }
+{ Signal Updates }
 AboveSMA = Price > SMAValue;
-
-{ Update Bullish Signals excluding SMA as a prerequisite }
 BullishSignalMACD = AboveSMA and CurrentBar > 2 and MACDDiff crosses over 0;
 BullishSignalRSI = AboveSMA and CurrentBar > 1 and RSIValue crosses over OverSold;
 BullishSignalBB = AboveSMA and CurrentBar > 1 and Close crosses over LowerBand;
 
-{ Count Bullish Indicators excluding SMA }
+{ Signal Count }
 BullishIndicatorsCount = 0;
 if BullishSignalMACD then BullishIndicatorsCount = BullishIndicatorsCount + 1;
 if BullishSignalRSI then BullishIndicatorsCount = BullishIndicatorsCount + 1;
 if BullishSignalBB then BullishIndicatorsCount = BullishIndicatorsCount + 1;
 
-{ Adjust Initial Signal to only consider Above SMA condition }
-if AboveSMA and (BullishIndicatorsCount > 0) then
-    begin
-    if InitialSignal = false then
-        begin
-        InitialSignal = true;
-        BarsSinceSignal = 0;
-        end
-    else if BarsSinceSignal < BarsAfterSignal then
-        BarsSinceSignal = BarsSinceSignal + 1;
-    end
-else
-    begin
-    InitialSignal = false;
-    BarsSinceSignal = 0;
-    end;
-
-{ Buy Logic within Window }
-{ Ensure stock is above SMA, enough bullish indicators are present excluding SMA, and a bullish 9/20 SMA cross occurred without a subsequent bearish cross for buy signal }
-if InitialSignal and BarsSinceSignal <= BarsAfterSignal and BullishIndicatorsCount >= MinIndicatorsForBuy and BullishCross and not BearishCrossOccurred then
-    begin
-    Buy ( "Combined_LE_Window" ) next bar at market;
-    InitialSignal = false;
-    BearishCrossOccurred = false; { Reset after trade execution }
-    end;
+{ Trading Logic }
+if MarketPosition = -1 and BullishIndicatorsCount >= MinIndicatorsForBuy then begin
+    Buy to Cover ("Close_Short") next bar at market; { Close short position }
+    Buy ("Long_After_Short") next bar at market; { Enter a long position after closing short }
+end
+else if MarketPosition <= 0 and BullishIndicatorsCount >= MinIndicatorsForBuy and AboveSMA then begin
+    Buy ("Enter_Long_Direct") next bar at market; { Directly enter a long position if flat or not in a short position }
+end;
 
 { Reset Counter After Trade Execution }
-if MarketPosition = 1 then
-    BarsSinceSignal = 0;
+if MarketPosition = 1 then BarsSinceSignal = 0;

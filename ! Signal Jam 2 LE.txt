@@ -1,0 +1,92 @@
+// Signal Jam 2 Strategy: Complete and Polished
+[IntrabarOrderGeneration = false]
+
+Inputs:  
+    Length_ATR(5),
+    NumATRs(0.75),
+    Length_PercentR(14),
+    Trigger_PercentR_LE(62),
+    UpVolAlertPct(5),
+    FastLength_MA(9),
+    SlowLength_MA(18),
+    BarsAfterSignal(2), // Time window for indicator alignment
+    MinIndicatorsForBuy(4); // Min bullish indicators for a buy order
+
+Variables:
+    BullishSignalATR(false),
+    BullishSignalPercentR(false),
+    BullishSignalVolRatio(false),
+    BullishSignalMA(false),
+    BearishIndicatorCount(0),
+    BullishIndicatorsCount(0),
+    BarsSinceATRSignal(0),
+    BarsSincePercentRSignal(0),
+    BarsSinceVolRatioSignal(0),
+    BarsSinceMASignal(0),
+    VolRatio(0),
+    FastAvg(0),
+    SlowAvg(0),
+    TotalTicks(0),
+    PercentRValue(0);
+
+// Calculate ATR-based Buy Signal
+If Close > Close[1] + AvgTrueRange(Length_ATR) * NumATRs then Begin
+    BullishSignalATR = true;
+    BarsSinceATRSignal = 0;
+End else BarsSinceATRSignal = BarsSinceATRSignal + 1;
+
+// Calculate PercentR-based Buy Signal
+PercentRValue = PercentR(Length_PercentR);
+If PercentRValue crosses over Trigger_PercentR_LE then Begin
+    BullishSignalPercentR = true;
+    BarsSincePercentRSignal = 0;
+End else BarsSincePercentRSignal = BarsSincePercentRSignal + 1;
+
+// Calculate Volume Ratio-based Buy Signal
+TotalTicks = UpTicks + DownTicks;
+If TotalTicks > 0 then
+    VolRatio = 100 * (UpTicks - DownTicks) / TotalTicks
+else
+    VolRatio = 0;
+If VolRatio crosses over UpVolAlertPct then Begin
+    BullishSignalVolRatio = true;
+    BarsSinceVolRatioSignal = 0;
+End else BarsSinceVolRatioSignal = BarsSinceVolRatioSignal + 1;
+
+// Calculate Moving Average-based Buy Signal
+FastAvg = Average(Close, FastLength_MA);
+SlowAvg = Average(Close, SlowLength_MA);
+If FastAvg crosses over SlowAvg then Begin
+    BullishSignalMA = true;
+    BarsSinceMASignal = 0;
+End else BarsSinceMASignal = BarsSinceMASignal + 1;
+
+// Check for signal alignment within BarsAfterSignal window for Buy Signal
+If (BullishSignalATR and BarsSinceATRSignal <= BarsAfterSignal) or
+   (BullishSignalPercentR and BarsSincePercentRSignal <= BarsAfterSignal) or
+   (BullishSignalVolRatio and BarsSinceVolRatioSignal <= BarsAfterSignal) or
+   (BullishSignalMA and BarsSinceMASignal <= BarsAfterSignal) then Begin
+
+    // Count Bullish Indicators
+    BullishIndicatorsCount = Iff(BullishSignalATR and BarsSinceATRSignal <= BarsAfterSignal, 1, 0) + 
+                             Iff(BullishSignalPercentR and BarsSincePercentRSignal <= BarsAfterSignal, 1, 0) + 
+                             Iff(BullishSignalVolRatio and BarsSinceVolRatioSignal <= BarsAfterSignal, 1, 0) + 
+                             Iff(BullishSignalMA and BarsSinceMASignal <= BarsAfterSignal, 1, 0);
+
+    // Entry Logic
+    If MarketPosition = 0 and BullishIndicatorsCount >= MinIndicatorsForBuy Then
+        Buy( "BEEP *LE*" ) next bar at market;
+End;
+
+// Reset Signals if conditions no longer met or after a trade
+If MarketPosition = 1 then Begin
+    BullishSignalATR = false;
+    BullishSignalPercentR = false;
+    BullishSignalVolRatio = false;
+    BullishSignalMA = false;
+    // Resetting BarsSinceXSignal to avoid immediate re-triggering
+    BarsSinceATRSignal = 0;
+    BarsSincePercentRSignal = 0;
+    BarsSinceVolRatioSignal = 0;
+    BarsSinceMASignal = 0;
+End;
